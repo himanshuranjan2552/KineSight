@@ -38,6 +38,7 @@ def run_trainer():
                 # 4. Geometry Calculations [cite: 59, 101]
                 hip_angle = utils.get_vertical_angle(landmarks, "hip")
                 knee_angle = utils.get_vertical_angle(landmarks, "knee")
+                ankle_angle = utils.get_vertical_angle(landmarks, "ankle")  # Add this line
                 
                 # 5. State Machine Logic [cite: 33, 60]
                 new_state = utils.determine_state(knee_angle)
@@ -58,7 +59,7 @@ def run_trainer():
                     current_state = new_state
 
                 # 6. Generate Feedback [cite: 63, 149]
-                feedback = utils.get_feedback(hip_angle, knee_angle, current_state)
+                feedback = utils.get_feedback(hip_angle, knee_angle, ankle_angle, current_state)
                 cv2.putText(frame, f"Feedback: {feedback}", (50, 100), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 

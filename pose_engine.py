@@ -1,21 +1,38 @@
 import cv2
 import mediapipe as mp
+import numpy as np
 
 class PoseEngine:
     """
     Handles initialization and inference using MediaPipe Pose.
     Optimized for high-fidelity real-time body tracking on CPU.
+    Updated for MediaPipe 0.10.32+ API.
     """
     def __init__(self, min_detection_confidence=0.5, min_tracking_confidence=0.5):
-        # Initialize MediaPipe Pose solution
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1, # 1 is balanced, 2 is higher accuracy, 0 is fastest
-            min_detection_confidence=min_detection_confidence,
+        # Initialize MediaPipe Pose with new tasks API
+        from mediapipe.tasks import python
+        from mediapipe.tasks.python import vision
+        
+        # Createpose landmarker options
+        base_options = python.BaseOptions(model_asset_path=None)
+        options = vision.PoseLandmarkerOptions(
+            base_options=base_options,
+            running_mode=vision.RunningMode.VIDEO,
+            min_pose_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence
         )
-        self.mp_drawing = mp.solutions.drawing_utils
+        
+        self.pose_landmarker = vision.PoseLandmarker.create_from_options(options)
+        self.frame_counter = 0
+        
+        # Pose connections for drawing
+        self.POSE_CONNECTIONS = frozenset([
+            (0, 1), (1, 2), (2, 3), (3, 7), (0, 4), (4, 5), (5, 6), (6, 8),
+            (9, 10), (11, 12), (11, 13), (13, 15), (15, 17), (15, 19), (15, 21),
+            (17, 19), (12, 14), (14, 16), (16, 18), (16, 20), (16, 22), (18, 20),
+            (11, 23), (12, 24), (23, 24), (23, 25), (24, 26), (25, 27), (26, 28),
+            (27, 29), (28, 30), (27, 31), (28, 32), (29, 31), (30, 32)
+        ])
 
     def get_landmarks(self, frame):
         """
@@ -24,30 +41,51 @@ class PoseEngine:
         """
         # Convert BGR to RGB
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.pose.process(image_rgb)
+        
+        # Create MediaPipe Image
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
+        
+        # Process the frame
+        self.frame_counter += 1
+        timestamp_ms = self.frame_counter * 33  # Approximate 30fps
+        results = self.pose_landmarker.detect_for_video(mp_image, timestamp_ms)
         
         landmarks_dict = None
         
-        if results.pose_landmarks:
-            # Draw skeleton on the frame for visualization
-            self.mp_drawing.draw_landmarks(
-                frame, 
-                results.pose_landmarks, 
-                self.mp_pose.POSE_CONNECTIONS
-            )
+        if results.pose_landmarks and len(results.pose_landmarks) > 0:
+            pose_landmarks = results.pose_landmarks[0]
+            
+            # Draw skeleton on the frame
+            self._draw_landmarks(frame, pose_landmarks)
             
             # Map landmarks to a dictionary for easy access by name
             landmarks_dict = {}
-            for id, lm in enumerate(results.pose_landmarks.landmark):
-                h, w, c = frame.shape
-                # Store normalized coordinates (x, y, z) and visibility
+            h, w, c = frame.shape
+            for id, lm in enumerate(pose_landmarks):
                 landmarks_dict[id] = {
                     'x': lm.x, 
                     'y': lm.y, 
                     'z': lm.z,
                     'vis': lm.visibility,
-                    'px': int(lm.x * w), # pixel coordinate x
-                    'py': int(lm.y * h)  # pixel coordinate y
+                    'px': int(lm.x * w),  # pixel coordinate x
+                    'py': int(lm.y * h)   # pixel coordinate y
                 }
                 
         return frame, landmarks_dict
+    
+    def _draw_landmarks(self, frame, landmarks):
+        """Draw pose landmarks and connections on the frame."""
+        h, w, c = frame.shape
+        
+        # Draw connections
+        for connection in self.POSE_CONNECTIONS:
+            start_idx, end_idx = connection
+            if start_idx < len(landmarks) and end_idx < len(landmarks):
+                start_point = (int(landmarks[start_idx].x * w), int(landmarks[start_idx].y * h))
+                end_point = (int(landmarks[end_idx].x * w), int(landmarks[end_idx].y * h))
+                cv2.line(frame, start_point, end_point, (0, 255, 0), 2)
+        
+        # Draw landmarks
+        for lm in landmarks:
+            cx, cy = int(lm.x * w), int(lm.y * h)
+            cv2.circle(frame, (cx, cy), 5, (255, 0, 0), -1)
