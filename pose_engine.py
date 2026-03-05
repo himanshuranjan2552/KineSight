@@ -1,6 +1,8 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import urllib.request
+import os
 
 class PoseEngine:
     """
@@ -9,12 +11,15 @@ class PoseEngine:
     Updated for MediaPipe 0.10.32+ API.
     """
     def __init__(self, min_detection_confidence=0.5, min_tracking_confidence=0.5):
+        # Download pose landmarker model if not exists
+        model_path = self._get_model_path()
+        
         # Initialize MediaPipe Pose with new tasks API
         from mediapipe.tasks import python
         from mediapipe.tasks.python import vision
         
-        # Createpose landmarker options
-        base_options = python.BaseOptions(model_asset_path=None)
+        # Create pose landmarker options
+        base_options = python.BaseOptions(model_asset_path=model_path)
         options = vision.PoseLandmarkerOptions(
             base_options=base_options,
             running_mode=vision.RunningMode.VIDEO,
@@ -33,6 +38,21 @@ class PoseEngine:
             (11, 23), (12, 24), (23, 24), (23, 25), (24, 26), (25, 27), (26, 28),
             (27, 29), (28, 30), (27, 31), (28, 32), (29, 31), (30, 32)
         ])
+    
+    def _get_model_path(self):
+        """Download the pose landmarker model if it doesn't exist."""
+        model_dir = os.path.join(os.path.dirname(__file__), 'models')
+        os.makedirs(model_dir, exist_ok=True)
+        
+        model_path = os.path.join(model_dir, 'pose_landmarker_lite.task')
+        
+        if not os.path.exists(model_path):
+            print("Downloading pose landmarker model...")
+            url = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
+            urllib.request.urlretrieve(url, model_path)
+            print("Model downloaded successfully!")
+        
+        return model_path
 
     def get_landmarks(self, frame):
         """
