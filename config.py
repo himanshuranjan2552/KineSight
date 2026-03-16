@@ -17,6 +17,21 @@ FEEDBACK_DEEP_SQUAT = 95.0     # Hip-Knee angle > 95
 # --- Timing & Inactivity ---
 INACTIVE_THRESH = 15.0 # Seconds before resetting counters
 
+# --- Push-up Thresholds (Elbow angle: shoulder-elbow-wrist) ---
+PUSHUP_S1_MIN = 155.0           # Up position: arms extended
+PUSHUP_S3_MAX = 90.0            # Bottom position: arms ~90 degrees bent
+PUSHUP_BODY_SAG_THRESH = 0.05   # Hip y below shoulder-ankle midpoint (normalized)
+PUSHUP_BODY_RAISE_THRESH = 0.05 # Hip y above shoulder-ankle midpoint (normalized)
+
+# --- Bicep Curl Thresholds (Elbow angle: shoulder-elbow-wrist) ---
+CURL_S1_MIN = 150.0             # Rest position: arm fully extended
+CURL_S3_MAX = 60.0              # Top position: arm fully curled
+CURL_UPPER_ARM_SWING = 30.0     # Max degrees upper arm can deviate from vertical
+
+# --- Plank Thresholds ---
+PLANK_BODY_SAG_THRESH = 0.05    # Hip sag: hip y below shoulder-ankle midpoint
+PLANK_BODY_RAISE_THRESH = 0.05  # Hip raise: hip y above shoulder-ankle midpoint
+
 # --- Exercise Mode ---
 # Beginner mode typically uses more relaxed thresholds
 # Pro mode requires stricter adherence to form
