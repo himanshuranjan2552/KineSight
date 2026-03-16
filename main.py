@@ -46,14 +46,22 @@ def run_trainer():
                 if new_state != current_state:
                     if new_state == "s1":
                         # Transition back to s1: Evaluate the completed squat [cite: 62]
-                        if state_sequence == ["s2", "s3", "s2"]:
+                        completed_rep = (
+                            len(state_sequence) >= 3
+                            and state_sequence[0] == "s2"
+                            and "s3" in state_sequence
+                            and state_sequence[-1] == "s2"
+                        )
+
+                        if completed_rep:
                             correct_count += 1
                         elif len(state_sequence) > 0:
                             incorrect_count += 1
                         state_sequence = []  # Reset sequence [cite: 44, 45]
                     else:
-                        # Record transitions between s2 and s3 [cite: 41, 42]
-                        if new_state not in state_sequence:
+                        # Record state changes in order; allow returning to s2 after s3.
+                        # Prevent duplicate consecutive entries caused by noisy frames.
+                        if not state_sequence or state_sequence[-1] != new_state:
                             state_sequence.append(new_state)
                     
                     current_state = new_state
