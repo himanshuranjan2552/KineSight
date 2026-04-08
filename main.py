@@ -12,6 +12,43 @@ EXERCISES = {
 }
 
 
+def show_start_countdown(cap, exercise_name, seconds):
+    if seconds <= 0:
+        return True
+
+    start_time = time.time()
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            return False
+
+        elapsed = time.time() - start_time
+        remaining = seconds - int(elapsed)
+
+        if remaining <= 0:
+            return True
+
+        h, w = frame.shape[:2]
+        text = str(remaining)
+        text_size, _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 4, 7)
+        text_x = (w - text_size[0]) // 2
+        text_y = (h + text_size[1]) // 2
+
+        cv2.putText(frame, exercise_name, (50, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2)
+        cv2.putText(frame, "Get ready!", (50, 95),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
+        cv2.putText(frame, f"Starting in {remaining}", (50, 145),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        cv2.putText(frame, text, (text_x, text_y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 255), 7)
+
+        cv2.imshow('KineSight AI Trainer', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return False
+
+
 def show_menu():
     print("\n" + "=" * 46)
     print("        KineSight AI Fitness Trainer")
@@ -47,6 +84,12 @@ def run_trainer(exercise):
     exercise_name = EXERCISES[exercise]
     print(f"\n{exercise_name} Trainer Started. Please stand in a SIDE VIEW.")
     print("Press 'q' to quit.\n")
+
+    countdown_seconds = getattr(config, "START_COUNTDOWN_SECONDS", 3)
+    if not show_start_countdown(cap, exercise_name, countdown_seconds):
+        cap.release()
+        cv2.destroyAllWindows()
+        return
 
     while cap.isOpened():
         ret, frame = cap.read()

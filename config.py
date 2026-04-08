@@ -16,6 +16,7 @@ FEEDBACK_DEEP_SQUAT = 95.0     # Hip-Knee angle > 95
 
 # --- Timing & Inactivity ---
 INACTIVE_THRESH = 15.0 # Seconds before resetting counters
+START_COUNTDOWN_SECONDS = 5  # Seconds to wait before exercise tracking begins
 
 # --- Push-up Thresholds (Elbow angle: shoulder-elbow-wrist) ---
 PUSHUP_S1_MIN = 155.0           # Up position: arms extended
